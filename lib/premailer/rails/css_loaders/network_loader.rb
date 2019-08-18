@@ -6,7 +6,17 @@ class Premailer
 
         def load(url)
           uri = uri_for_url(url)
-          Net::HTTP.get(uri) if uri
+          return unless uri
+
+          options = {
+            use_ssl: (uri.scheme == 'https'),
+            verify_mode: (OpenSSL::SSL::VERIFY_NONE unless Premailer::Rails.config.fetch(:verify_ssl))
+          }.compact!
+
+          Net::HTTP.start(uri.host, uri.port, options) do |http|
+            request = Net::HTTP::Get.new(uri)
+            http.request(request).body
+          end
         end
 
         def uri_for_url(url)
